@@ -1,0 +1,266 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace UsingGrid
+{
+    public partial class frmGridInsert : System.Web.UI.Page
+    {
+        string connect = (@"Data Source=(localdb)\ProjectModels;Initial Catalog=GridSessional;Integrated Security=True;");
+        public void disp_Image()
+        {
+            SqlConnection con = new SqlConnection(connect);
+            con.Open();
+            SqlCommand cmd = con.CreateCommand();
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = "select * from Image";
+            DataTable dt = new DataTable();
+            SqlDataAdapter da = new SqlDataAdapter(cmd);
+            da.Fill(dt);
+            grdResult.DataSource = dt;
+            grdResult.DataBind();
+            con.Close();
+        }
+        public void fill()
+        {
+            ddlId.Items.Clear();
+            SqlConnection con = new SqlConnection(connect);
+            string q = "select * from Image";
+            SqlCommand cmd = new SqlCommand(q, con);
+            try
+            {
+                con.Open();
+                SqlDataReader dr = cmd.ExecuteReader();
+                while (dr.Read())
+                {
+                    string Img_id = dr.GetInt32(0).ToString();
+                    ddlId.Items.Add(Img_id);
+                    ddlId.DataBind();
+                }
+            }
+            catch (SqlException excp)
+            {
+                lblResult.Text = excp.Message;
+            }
+            con.Close();
+        }
+        public void clear()
+        {
+            txtName.Text = string.Empty;
+            txtWidth.Text = string.Empty;
+            txtHeight.Text = string.Empty;
+            txtExt.Text = string.Empty;
+        }
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+                fill();
+            disp_Image();
+            lblErrName.Text = "*";
+            lblErrHeight.Text = "*";
+            lblErrWidth.Text = "*";
+            lblErrExt.Text = "*";
+        }
+
+        protected void ddlId_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        protected void btnSubmit_Click(object sender, EventArgs e)
+        {
+            bool error = false;
+            if (string.IsNullOrWhiteSpace(txtName.Text))
+            {
+                lblErrName.Text = "Enter Image Name Please";
+                error = true;
+            }
+            if (string.IsNullOrWhiteSpace(txtHeight.Text))
+            {
+                lblErrHeight.Text = "Enter Image Height Please";
+                error = true;
+            }
+            if (string.IsNullOrWhiteSpace(txtWidth.Text))
+            {
+                lblErrWidth.Text = "Enter Image Width Please";
+                error = true;
+            }
+            if (string.IsNullOrWhiteSpace(txtExt.Text))
+            {
+                lblErrExt.Text = "Enter Image Extension Please";
+                error = true;
+            }
+            else
+            {
+                string ext = txtExt.Text.ToLower();
+                if (ext == "jpg" || ext == "jpeg" || ext == "png")
+                {
+                    //error = false;
+                }
+                else
+                {
+                    lblErrExt.Text = "Enter Valid Extension Please";
+                    error = true;
+                }
+            }
+            if (error == false)
+            {
+                SqlConnection con = new SqlConnection(connect);
+                con.Open();
+                try
+                {
+                    string str = "insert into Image (ImageName, ImageHeight, ImageWidth, ImageExtension) " + "values ('" + txtName.Text + "','" + txtHeight.Text + "','" + txtWidth.Text + "','" + txtExt.Text.ToLower() + "');";
+                    SqlCommand cmd = new SqlCommand(str, con);
+                    cmd.ExecuteNonQuery();
+                    string str1 = "select max(ImageId) from Image;";
+                    SqlCommand cmd1 = new SqlCommand(str1, con);
+                    SqlDataReader dr = cmd1.ExecuteReader();
+                    if (dr.Read())
+                        lblResult.Text = "Data Inserted";
+                }
+                catch (SqlException excep)
+                {
+                    lblResult.Text = (excep.Message);
+                }
+                con.Close();
+                disp_Image();
+                fill();
+                clear();
+            }
+        }
+
+        protected void btnDelete_Click(object sender, EventArgs e)
+        {
+            {
+                SqlConnection con = new SqlConnection(connect);
+                string query = "delete from Image where ImageId = '" + ddlId.Text +
+               "'";
+                SqlCommand cmd = new SqlCommand(query, con);
+                con.Open();
+                int i = cmd.ExecuteNonQuery();
+                if (i > 0)
+                    lblResult.Text = "Data deleted";
+                else
+                    lblResult.Text = "Data not found";
+                con.Close();
+                disp_Image();
+                fill();
+                clear();
+                //Response.Redirect("frmStudent.aspx");
+            }
+        }
+
+        protected void btnUpdate_Click(object sender, EventArgs e)
+        {
+            bool error = false;
+            if (string.IsNullOrWhiteSpace(txtName.Text))
+            {
+                lblErrName.Text = "Enter Image Name Please";
+                error = true;
+            }
+            if (string.IsNullOrWhiteSpace(txtHeight.Text))
+            {
+                lblErrHeight.Text = "Enter Image Height Please";
+                error = true;
+            }
+            if (string.IsNullOrWhiteSpace(txtWidth.Text))
+            {
+                lblErrWidth.Text = "Enter Image Width Please";
+                error = true;
+            }
+            if (string.IsNullOrWhiteSpace(txtExt.Text))
+            {
+                lblErrExt.Text = "Enter Image Extension Please";
+                error = true;
+            }
+            else
+            {
+                string ext = txtExt.Text.ToLower();
+                if (ext == "jpg" || ext == "jpeg" || ext == "png")
+                {
+                    //error = false;
+                }
+                else
+                {
+                    lblErrExt.Text = "Enter Valid Extension Please";
+                    error = true;
+                }
+            }
+            if (error == false)
+            {
+                SqlConnection con = new SqlConnection(connect);
+                string query = "update Image set ImageName = @ImageName, ImageHeight = @ImageHeight, ImageWidth = @ImageWidth, ImageExtension =@ImageExtension where ImageId = @ImageId";
+                SqlCommand cmd = new SqlCommand();
+                cmd.CommandText = query;
+                cmd.Connection = con;
+                cmd.Parameters.AddWithValue("@ImageId", ddlId.SelectedItem.Text);
+                cmd.Parameters.AddWithValue("@ImageName", txtName.Text);
+                cmd.Parameters.AddWithValue("@ImageHeight", txtHeight.Text);
+                cmd.Parameters.AddWithValue("@ImageWidth", txtWidth.Text);
+                cmd.Parameters.AddWithValue("@ImageExtension",
+               txtExt.Text.ToLower());
+                //cmd.Parameters.AddWithValue("@std_date", dateTimePicker1.Value.ToString("yyyy-MM-dd"));
+                con.Open();
+                int i = cmd.ExecuteNonQuery();
+                if (i > 0)
+                    lblResult.Text = "Data Updated";
+                else
+                    lblResult.Text = "Data not found";
+                con.Close();
+                //SqlDataAdapter sda = new SqlDataAdapter(cmd);
+                //DataSet ds = new DataSet();
+                //sda.Fill(ds);
+                disp_Image();
+                clear();
+
+            }
+        }
+
+        protected void grdResult_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowIndex >= 0)
+            {
+                if (Convert.ToInt32(e.Row.Cells[3].Text) < 50)
+                {
+                    e.Row.Cells[3].ForeColor = System.Drawing.Color.Red;
+                }
+            }
+        }
+
+        protected void grdResult_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            using (SqlConnection con = new SqlConnection(connect))
+            {
+                string q = "select * from Image where ImageId = @ImageId";
+                SqlCommand cmd = new SqlCommand(q, con);
+                cmd.Parameters.AddWithValue("@ImageId", ddlId.Text);
+                try
+                {
+                    con.Open();
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    if (dr.HasRows)
+                    {
+                        dr.Read();
+                        txtName.Text = dr["ImageName"].ToString();
+                        txtHeight.Text = dr["ImageHeight"].ToString();
+                        txtWidth.Text = dr["ImageWidth"].ToString();
+                        txtExt.Text = dr["ImageExtension"].ToString();
+                    }
+                    else
+                    {
+                        lblResult.Text = "No records found for the selected ImageId.";
+                     }
+                }
+                catch (SqlException excep)
+                {
+                    lblResult.Text = "An error occurred: " + excep.Message;
+                }
+            }
+        }
+    }
+}
